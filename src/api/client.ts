@@ -37,6 +37,9 @@ export const subcontractorsApi = {
     if (isMbe !== undefined) params.append('is_mbe', String(isMbe));
     return apiClient.get<Subcontractor[]>(`/subcontractors/search?${params.toString()}`);
   },
+  update: (id: string, data: { legal_name?: string; certification_number?: string }) =>
+    apiClient.put<Subcontractor>(`/subcontractors/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/subcontractors/${id}`),
 };
 
 // Bids
