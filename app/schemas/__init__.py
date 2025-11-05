@@ -13,6 +13,12 @@ from app.schemas.bid import (
 )
 from app.schemas.validation import ValidationResult, ValidationResponse
 from app.schemas.jurisdiction import Jurisdiction, JurisdictionCreate
+from app.schemas.compliance_rule import (
+    ComplianceRule,
+    ComplianceRuleCreate,
+    ComplianceRuleUpdate,
+    ComplianceRuleDetail
+)
 from app.schemas.subcontractor_directory import (
     SubcontractorDirectory,
     SubcontractorDirectoryCreate,
@@ -53,6 +59,10 @@ __all__ = [
     "ValidationResponse",
     "Jurisdiction",
     "JurisdictionCreate",
+    "ComplianceRule",
+    "ComplianceRuleCreate",
+    "ComplianceRuleUpdate",
+    "ComplianceRuleDetail",
     "SubcontractorDirectory",
     "SubcontractorDirectoryCreate",
     "SubcontractorDirectoryUpdate",
