@@ -1,82 +1,221 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { bidsApi } from '../api/client';
-import { Bid } from '../types';
-import { Plus, FileText, DollarSign, Target, Building2, Users, Settings } from 'lucide-react';
+import { bidsApi, opportunitiesApi } from '../api/client';
+import { Bid, Opportunity } from '../types';
+import {
+  Plus,
+  FileText,
+  DollarSign,
+  Target,
+  Building2,
+  Users,
+  Search,
+  TrendingUp,
+  AlertCircle,
+  Calendar
+} from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [bids, setBids] = useState<Bid[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadBids();
+    loadData();
   }, []);
 
-  const loadBids = async () => {
+  const loadData = async () => {
     try {
-      const response = await bidsApi.getAll();
-      console.log('===== API RESPONSE DEBUG =====');
-      console.log('Full response:', response.data);
-      console.log('First bid:', response.data[0]);
-      console.log('First bid subcontractors:', response.data[0]?.bid_subcontractors);
-      console.log('Subcontractors length:', response.data[0]?.bid_subcontractors?.length);
-      console.log('==============================');
-      setBids(response.data);
+      const [bidsResponse, oppsResponse] = await Promise.all([
+        bidsApi.getAll(),
+        opportunitiesApi.getAll(0, 5, true),
+      ]);
+      setBids(bidsResponse.data);
+      setOpportunities(oppsResponse.data);
     } catch (err) {
-      console.error('Failed to load bids:', err);
+      console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const calculateDaysUntilDue = (dueDate: string | null): number | null => {
+    if (!dueDate) return null;
+    const today = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header with Navigation */}
+        {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">ComplyFormAI</h1>
-              <p className="text-gray-600">Automated validation for Maryland construction bids</p>
-            </div>
-            
-            {/* Quick Navigation Menu */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => navigate('/organizations')}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                title="Manage Organizations"
-              >
-                <Building2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Organizations</span>
-              </button>
-              <button
-                onClick={() => navigate('/subcontractors')}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                title="Manage Subcontractors"
-              >
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Subcontractors</span>
-              </button>
-            </div>
-          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">ComplyFormAI</h1>
+          <p className="text-gray-600 text-lg">
+            Your Compliance-First Platform for Government Contracting
+          </p>
         </div>
 
-        {/* Create New Bid Button */}
-        <div className="mb-8">
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <button
             onClick={() => navigate('/create-bid')}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-500 text-left"
           >
-            <Plus className="w-5 h-5" />
-            Create New Bid
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Plus className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Create Bid</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Start a new bid with automated validation
+            </p>
+          </button>
+
+          <button
+            onClick={() => navigate('/opportunities')}
+            className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-transparent hover:border-green-500 text-left"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-green-100 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Opportunities</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Browse procurement opportunities
+            </p>
+          </button>
+
+          <button
+            onClick={() => navigate('/directory')}
+            className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-transparent hover:border-purple-500 text-left"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <Search className="w-6 h-6 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Directory</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Search certified subcontractors
+            </p>
+          </button>
+
+          <button
+            onClick={() => navigate('/organizations')}
+            className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border-2 border-transparent hover:border-gray-500 text-left"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-3 bg-gray-100 rounded-lg">
+                <Building2 className="w-6 h-6 text-gray-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Manage</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Organizations & subcontractors
+            </p>
           </button>
         </div>
 
-        {/* Bids List */}
+        {/* Recent Opportunities */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Recent Opportunities</h2>
+            <button
+              onClick={() => navigate('/opportunities')}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              View All →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {opportunities.slice(0, 4).map((opp) => {
+              const daysUntilDue = calculateDaysUntilDue(opp.due_date);
+              
+              return (
+                <div
+                  key={opp.id}
+                  className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/assessment/${opp.id}`)}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-semibold text-gray-900 flex-1 pr-4">
+                      {opp.title}
+                    </h3>
+                    {opp.relevance_score !== null && opp.relevance_score > 0 && (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium whitespace-nowrap">
+                        {opp.relevance_score}% Match
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                    {opp.total_value && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-4 h-4" />
+                        ${(opp.total_value / 1000000).toFixed(1)}M
+                      </div>
+                    )}
+                    {opp.mbe_goal && (
+                      <div className="flex items-center gap-1">
+                        <Target className="w-4 h-4" />
+                        {opp.mbe_goal}% MBE
+                      </div>
+                    )}
+                    {daysUntilDue !== null && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span
+                          className={
+                            daysUntilDue < 7
+                              ? 'text-red-600 font-semibold'
+                              : daysUntilDue < 14
+                              ? 'text-yellow-600 font-semibold'
+                              : ''
+                          }
+                        >
+                          {daysUntilDue}d
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4" />
+                    Run Assessment
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {opportunities.length === 0 && (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <AlertCircle className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-500">No opportunities available</p>
+            </div>
+          )}
+        </div>
+
+        {/* Your Bids */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Bids</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Your Bids</h2>
+            <button
+              onClick={() => navigate('/create-bid')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Create New Bid
+            </button>
+          </div>
 
           {loading ? (
             <div className="text-center py-12">
@@ -87,7 +226,9 @@ const HomePage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-12 text-center">
               <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No bids yet</h3>
-              <p className="text-gray-500 mb-6">Create your first bid to get started</p>
+              <p className="text-gray-500 mb-6">
+                Create your first bid to get started with automated validation
+              </p>
               <button
                 onClick={() => navigate('/create-bid')}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -137,6 +278,56 @@ const HomePage: React.FC = () => {
               })}
             </div>
           )}
+        </div>
+
+        {/* Quick Links Footer */}
+        <div className="mt-12 pt-8 border-t border-gray-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button
+              onClick={() => navigate('/organizations')}
+              className="text-left p-4 hover:bg-white rounded-lg transition-colors"
+            >
+              <Building2 className="w-5 h-5 text-gray-600 mb-2" />
+              <p className="text-sm font-medium text-gray-900">Organizations</p>
+              <p className="text-xs text-gray-500">Manage your firms</p>
+            </button>
+
+            <button
+              onClick={() => navigate('/subcontractors')}
+              className="text-left p-4 hover:bg-white rounded-lg transition-colors"
+            >
+              <Users className="w-5 h-5 text-gray-600 mb-2" />
+              <p className="text-sm font-medium text-gray-900">Subcontractors</p>
+              <p className="text-xs text-gray-500">Your network</p>
+            </button>
+
+            <button
+              onClick={() => navigate('/directory')}
+              className="text-left p-4 hover:bg-white rounded-lg transition-colors"
+            >
+              <Search className="w-5 h-5 text-gray-600 mb-2" />
+              <p className="text-sm font-medium text-gray-900">Directory</p>
+              <p className="text-xs text-gray-500">Find partners</p>
+            </button>
+
+            <button
+              onClick={() => navigate('/opportunities')}
+              className="text-left p-4 hover:bg-white rounded-lg transition-colors"
+            >
+              <TrendingUp className="w-5 h-5 text-gray-600 mb-2" />
+              <p className="text-sm font-medium text-gray-900">Opportunities</p>
+              <p className="text-xs text-gray-500">Track bids</p>
+            </button>
+
+            <button
+              onClick={() => navigate('/compliance-rules')}
+              className="text-left p-4 hover:bg-white rounded-lg transition-colors"
+            >
+              <Target className="w-5 h-5 text-gray-600 mb-2" />
+              <p className="text-sm font-medium text-gray-900">Compliance Rules</p>
+              <p className="text-xs text-gray-500">Manage rules</p>
+            </button>
+          </div>
         </div>
       </div>
     </div>
