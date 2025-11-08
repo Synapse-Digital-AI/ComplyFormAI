@@ -20,13 +20,14 @@ app = FastAPI(
     description="ComplyFormAI Enhanced Backend - Compliance-First Platform with Jurisdiction-Specific Rules"
 )
 
-# CORS middleware
+# CORS middleware - MUST be added before route definitions
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:5432"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Health check endpoint

@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_, func
+from sqlalchemy import or_, and_, func, Boolean
 from app.models import SubcontractorDirectory
 from app.schemas.subcontractor_directory import (
     SubcontractorDirectoryCreate, 
@@ -172,16 +172,12 @@ class SubcontractorDirectoryService:
         # Match certifications
         if is_mbe:
             query = query.filter(
-                SubcontractorDirectory.certifications['mbe'].astext.cast(
-                    type_=type(True)
-                ) == True
+                SubcontractorDirectory.certifications['mbe'].astext.cast(Boolean) == True
             )
-        
+
         if is_vsbe:
             query = query.filter(
-                SubcontractorDirectory.certifications['vsbe'].astext.cast(
-                    type_=type(True)
-                ) == True
+                SubcontractorDirectory.certifications['vsbe'].astext.cast(Boolean) == True
             )
         
         # Filter by rating

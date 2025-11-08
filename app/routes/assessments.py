@@ -14,14 +14,14 @@ from app.services import PreBidAssessmentService
 
 router = APIRouter(prefix="/assessments", tags=["pre-bid-assessments"])
 
-@router.post("/perform", response_model=PreBidAssessmentDetail)
+@router.post("/perform")
 def perform_assessment(
     request: AssessmentRequest,
     db: Session = Depends(get_db)
 ):
     """
     Perform a comprehensive pre-bid assessment
-    
+
     This endpoint analyzes an opportunity and provides:
     - Overall risk score (0-100, higher = more risk)
     - MBE/VSBE gap analysis
@@ -31,7 +31,7 @@ def perform_assessment(
     - Risk factors
     """
     service = PreBidAssessmentService(db)
-    
+
     try:
         assessment_data = service.perform_assessment(request)
         return assessment_data
@@ -39,6 +39,15 @@ def perform_assessment(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e)
+        )
+    except Exception as e:
+        # Log the full error for debugging
+        import traceback
+        print(f"ERROR in perform_assessment: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
         )
 
 @router.get("/{assessment_id}", response_model=PreBidAssessment)

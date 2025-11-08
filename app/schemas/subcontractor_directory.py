@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_serializer
 from uuid import UUID
 from typing import Optional, List, Dict
 from decimal import Decimal
@@ -17,6 +17,11 @@ class SubcontractorDirectoryBase(BaseModel):
     rating: Optional[Decimal] = 0.0
     projects_completed: Optional[int] = 0
     is_verified: Optional[bool] = False
+
+    @field_serializer('rating')
+    def serialize_rating(self, rating: Optional[Decimal], _info):
+        """Serialize Decimal rating as float for JSON"""
+        return float(rating) if rating is not None else 0.0
 
 class SubcontractorDirectoryCreate(SubcontractorDirectoryBase):
     pass

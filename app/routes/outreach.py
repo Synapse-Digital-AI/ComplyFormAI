@@ -126,7 +126,7 @@ def get_organization_outreach_stats(
 ):
     """
     Get outreach statistics for an organization across all opportunities
-    
+
     Returns:
     - Total outreach attempts
     - Count by status (CONTACTED, RESPONDED, COMMITTED, DECLINED)
@@ -135,3 +135,73 @@ def get_organization_outreach_stats(
     """
     service = SubcontractorOutreachService(db)
     return service.get_outreach_statistics(organization_id=organization_id)
+
+@router.post("/bulk-create", response_model=List[SubcontractorOutreach], status_code=status.HTTP_201_CREATED)
+def bulk_create_outreach(
+    organization_id: UUID,
+    opportunity_id: UUID,
+    subcontractor_ids: List[UUID],
+    initial_status: str = 'CONTACTED',
+    notes: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Bulk create outreach records for multiple subcontractors
+
+    This is useful after running a pre-bid assessment that identifies
+    potential subcontractors. You can track outreach to all of them at once.
+
+    Example use case:
+    1. Run pre-bid assessment for an opportunity
+    2. Assessment returns list of 10 matching subcontractors
+    3. Use this endpoint to create outreach records for all 10
+    4. Track responses as they come in
+
+    Args:
+    - organization_id: Your organization ID
+    - opportunity_id: The opportunity you're pursuing
+    - subcontractor_ids: List of subcontractor IDs from directory
+    - initial_status: Default is 'CONTACTED'
+    - notes: Optional notes (e.g., "Following up from assessment")
+
+    Returns:
+    - List of created outreach records (skips duplicates)
+    """
+    service = SubcontractorOutreachService(db)
+    return service.bulk_create_outreach_from_assessment(
+        organization_id=organization_id,
+        opportunity_id=opportunity_id,
+        subcontractor_ids=subcontractor_ids,
+        initial_status=initial_status,
+        notes=notes
+    )
+
+@router.get("/pending/organization/{organization_id}", response_model=List[SubcontractorOutreachDetail])
+def get_pending_outreach(
+    organization_id: UUID,
+    opportunity_id: Optional[UUID] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Get all pending outreach (status = CONTACTED) for follow-up
+
+    This helps you track which subcontractors you've contacted
+    but haven't heard back from yet.
+
+    Use this to:
+    - See who needs a follow-up call/email
+    - Identify stale outreach attempts
+    - Track your outreach pipeline
+
+    Args:
+    - organization_id: Your organization ID
+    - opportunity_id: Optional filter by specific opportunity
+
+    Returns:
+    - List of outreach records with CONTACTED status, ordered by contact date
+    """
+    service = SubcontractorOutreachService(db)
+    return service.get_pending_outreach(
+        organization_id=organization_id,
+        opportunity_id=opportunity_id
+    )
