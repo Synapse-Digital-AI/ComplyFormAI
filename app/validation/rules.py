@@ -419,7 +419,9 @@ class JurisdictionComplianceRule(ValidationRule):
                 else:
                     print(f"      ✗ No directory entry or certifications")
 
-        mbe_percentage = (mbe_total / bid.total_amount) * 100
+        subcontract_sum = sum(bs.subcontract_value for bs in bid.bid_subcontractors)
+        denominator = subcontract_sum or bid.total_amount
+        mbe_percentage = (mbe_total / denominator) * 100
         print(f"    MBE Total: ${mbe_total} ({mbe_count} entries)")
         print(f"    MBE Percentage: {mbe_percentage:.2f}% (required: {threshold}%)")
 
@@ -592,7 +594,9 @@ class MBEPercentageRule(ValidationRule):
                     if directory_entry.certifications.get('mbe', False):
                         mbe_total += bs.subcontract_value
 
-        mbe_percentage = (mbe_total / bid.total_amount) * 100
+        subcontract_sum = sum(bs.subcontract_value for bs in bid.bid_subcontractors)
+        denominator = subcontract_sum or bid.total_amount
+        mbe_percentage = (mbe_total / denominator) * 100
 
         if mbe_percentage < bid.mbe_goal:
             return {
