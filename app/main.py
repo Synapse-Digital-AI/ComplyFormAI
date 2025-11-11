@@ -23,7 +23,7 @@ app = FastAPI(
 # CORS middleware - MUST be added before route definitions
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5432", "https://vercel.com/synapse-ai/comply-form-ai-frontend-p", "https://comply-form-ai-frontend-p.vercel.app/"],
+    allow_origins=["http://localhost:3000", "https://comply-form-ai-frontend-p.vercel.app"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
