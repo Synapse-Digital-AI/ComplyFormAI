@@ -1,47 +1,68 @@
+import os
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
 
-# CORRECT connection string from Supabase
-connection_url = "postgresql://postgres.lfizixmiqrspdskubdyj:sgnAdmin11%24%24@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+load_dotenv()
 
-print("="*70)
-print("Testing CORRECT Supabase Session Pooler Connection")
-print("="*70)
+# Get actual credentials from .env
+DATABASE_URL_LOCAL = os.getenv("DATABASE_URL_LOCAL")
+DATABASE_URL_PRODUCTION = os.getenv("DATABASE_URL_PRODUCTION")
 
-try:
-    engine = create_engine(connection_url, pool_pre_ping=True)
-    
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT version();"))
-        version = result.fetchone()[0]
-        
-        print("✅ ✅ ✅ CONNECTION SUCCESSFUL! ✅ ✅ ✅")
-        print(f"\nPostgreSQL: {version[:80]}...")
-        
-        # Count tables
-        result = conn.execute(text("""
-            SELECT COUNT(*) 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-        """))
-        count = result.fetchone()[0]
-        print(f"\n📊 Tables in database: {count}")
-        
-        if count > 0:
-            result = conn.execute(text("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public'
-                ORDER BY table_name
-                LIMIT 10
-            """))
-            tables = [row[0] for row in result.fetchall()]
-            print(f"\nFirst 10 tables:")
-            for table in tables:
-                print(f"  ✓ {table}")
-        
-        print(f"\n{'='*70}")
-        print("🎉 Your Supabase database is connected and working!")
-        print(f"{'='*70}\n")
-        
-except Exception as e:
-    print(f"❌ Connection failed: {str(e)}")
+# Test configurations
+CONNECTIONS = {
+    "Local (Transaction Pooler IPv4)": DATABASE_URL_LOCAL,
+    "Production (Direct Connection IPv6)": DATABASE_URL_PRODUCTION
+}
+
+def test_connection(name, url):
+    print(f"\n{'='*60}")
+    print(f"Testing: {name}")
+    print(f"{'='*60}")
+
+    try:
+        engine = create_engine(
+            url,
+            pool_pre_ping=True,
+            connect_args={"connect_timeout": 10}
+        )
+
+        with engine.connect() as conn:
+            # Test basic query
+            result = conn.execute(text("SELECT version()"))
+            version = result.fetchone()[0]
+
+            # Test response time
+            import time
+            start = time.time()
+            conn.execute(text("SELECT 1"))
+            latency = (time.time() - start) * 1000
+
+            print(f"SUCCESS!")
+            print(f"   PostgreSQL: {version.split(',')[0]}")
+            print(f"   Latency: {latency:.2f}ms")
+            return True
+
+    except Exception as e:
+        print(f"FAILED!")
+        print(f"   Error: {str(e)}")
+        return False
+
+if __name__ == "__main__":
+    print("\nTesting Supabase Connections\n")
+
+    results = {}
+    for name, url in CONNECTIONS.items():
+        results[name] = test_connection(name, url)
+
+    print(f"\n{'='*60}")
+    print("SUMMARY:")
+    print(f"{'='*60}")
+    for name, success in results.items():
+        status = "Working" if success else "Failed"
+        print(f"{name:30} {status}")
+
+    print("\nRecommendation:")
+    if results["Local (Transaction Pooler IPv4)"]:
+        print("   Use Transaction Pooler for LOCAL development (set ENVIRONMENT=development)")
+    if results["Production (Direct Connection IPv6)"]:
+        print("   Use Direct Connection for RENDER production (set ENVIRONMENT=production)")
